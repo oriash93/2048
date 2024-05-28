@@ -43,7 +43,7 @@ def print_board(board: list[list[int]]):
 
 
 def get_move_input() -> str:
-    move = input("Enter the next move (W/A/S/D):\n").upper()
+    move = input("Enter the next move (W/A/S/D): ").upper()
     while move not in ["W", "A", "S", "D"]:
         move = input("Invalid move. Please enter W/A/S/D:")
     return move
@@ -67,17 +67,19 @@ def insert_new_number(board: list[list[int]]) -> bool:
     return False
 
 
-def clear_board():
+def clear():
     os.system("clear")
 
 
 def main():
-    win = False
+    is_winning_cell = False
     is_board_full = False
     board = init_board()
-    while not win and not is_board_full:
+    while not is_winning_cell and not is_board_full:
+        clear()
         print_board(board)
         move = get_move_input()
+
         if move == "W":
             pass
 
@@ -106,7 +108,7 @@ def main():
                             new_value = board[next_non_empty_cell_in_col][col] * 2
                             board[next_non_empty_cell_in_col][col] = new_value
                             board[row][col] = EMPTY_CELL
-                            win = new_value == WINNING_CELL
+                            is_winning_cell = new_value == WINNING_CELL
                         else:
                             board[next_non_empty_cell_in_col - 1][col] = board[row][col]
                             if next_non_empty_cell_in_col - 1 > row:
@@ -116,9 +118,12 @@ def main():
                         board[next_cell_row][col] = board[row][col]
                         board[row][col] = EMPTY_CELL
 
-            is_board_full = not insert_new_number(board)
+        is_board_full = not insert_new_number(board)
 
-        # clear_board()
+    if is_winning_cell:
+        print("congrats! you won :)")
+    elif is_board_full:
+        print("game over :(")
 
 
 if __name__ == "__main__":
