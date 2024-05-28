@@ -5,6 +5,8 @@ BOARD_SIZE = 4
 EMPTY_CELL = 0
 WINNING_CELL = 2048
 POSSIBLE_NEW_NUMBERS = [2, 4]
+HAS_WON = False
+HAS_LOST = False
 
 
 def init_board() -> list[list[int]]:
@@ -57,72 +59,91 @@ def check_for_empty_cells(board: list[list[int]]) -> bool:
     return False
 
 
-def insert_new_number(board: list[list[int]]) -> bool:
+def insert_new_number(board: list[list[int]]):
     if check_for_empty_cells(board):
         pos = randomize_position()
         while board[pos[0]][pos[1]] != EMPTY_CELL:
             pos = randomize_position()
         board[pos[0]][pos[1]] = randomize_new_number()
-        return True
-    return False
+    HAS_LOST = True
 
 
 def clear():
     os.system("clear")
 
 
+def rotate_matrix_90_clockwise(matrix) -> list[list[int]]:
+    transposed_matrix = list(zip(*matrix))
+    rotated_matrix = [list(reversed(row)) for row in transposed_matrix]
+    return rotated_matrix
+
+
+def rotate_matrix_90_counterclockwise(matrix) -> list[list[int]]:
+    """Rotate the matrix 90 degrees counterclockwise."""
+    transposed_matrix = list(zip(*matrix))
+    rotated_matrix = transposed_matrix[::-1]
+    return [list(row) for row in rotated_matrix]
+
+
+def move_logic(board: list[list[int]]) -> list[list[int]]:
+    for row in range(BOARD_SIZE - 2, -1, -1):  # traverse rows from bottom to top
+        for col in range(BOARD_SIZE):
+            if board[row][col] == EMPTY_CELL:
+                continue
+            non_empty_cells_in_col = [
+                i for i in range(row + 1, BOARD_SIZE) if board[i][col] != EMPTY_CELL
+            ]
+            if len(non_empty_cells_in_col) > 0:
+                next_non_empty_cell_in_col = min(non_empty_cells_in_col)
+                if board[next_non_empty_cell_in_col][col] == board[row][col]:
+                    # merge values
+                    new_value = board[next_non_empty_cell_in_col][col] * 2
+                    board[next_non_empty_cell_in_col][col] = new_value
+                    board[row][col] = EMPTY_CELL
+                    HAS_WON = new_value == WINNING_CELL
+                else:
+                    board[next_non_empty_cell_in_col - 1][col] = board[row][col]
+                    if next_non_empty_cell_in_col - 1 > row:
+                        board[row][col] = EMPTY_CELL
+            else:
+                next_cell_row = max([i for i in range(row + 1, BOARD_SIZE)])
+                board[next_cell_row][col] = board[row][col]
+                board[row][col] = EMPTY_CELL
+    return board
+
+
 def main():
-    is_winning_cell = False
-    is_board_full = False
     board = init_board()
-    while not is_winning_cell and not is_board_full:
+    while not HAS_WON and not HAS_LOST:
         clear()
         print_board(board)
         move = get_move_input()
 
         if move == "W":
-            pass
-
-        elif move == "A":
-            pass
+            new_board = rotate_matrix_90_clockwise(rotate_matrix_90_clockwise(board))
+            new_board = move_logic(new_board)
+            board = rotate_matrix_90_counterclockwise(
+                rotate_matrix_90_counterclockwise(new_board)
+            )
 
         elif move == "D":
-            pass
+            new_board = rotate_matrix_90_clockwise(board)
+            new_board = move_logic(new_board)
+            board = rotate_matrix_90_counterclockwise(new_board)
+
+        elif move == "A":
+            new_board = rotate_matrix_90_counterclockwise(board)
+            new_board = move_logic(new_board)
+            board = rotate_matrix_90_clockwise(new_board)
 
         elif move == "S":
-            for row in range(
-                BOARD_SIZE - 2, -1, -1
-            ):  # traverse rows from bottom to top
-                for col in range(BOARD_SIZE):
-                    if board[row][col] == EMPTY_CELL:
-                        continue
-                    non_empty_cells_in_col = [
-                        i
-                        for i in range(row + 1, BOARD_SIZE)
-                        if board[i][col] != EMPTY_CELL
-                    ]
-                    if len(non_empty_cells_in_col) > 0:
-                        next_non_empty_cell_in_col = min(non_empty_cells_in_col)
-                        if board[next_non_empty_cell_in_col][col] == board[row][col]:
-                            # merge values
-                            new_value = board[next_non_empty_cell_in_col][col] * 2
-                            board[next_non_empty_cell_in_col][col] = new_value
-                            board[row][col] = EMPTY_CELL
-                            is_winning_cell = new_value == WINNING_CELL
-                        else:
-                            board[next_non_empty_cell_in_col - 1][col] = board[row][col]
-                            if next_non_empty_cell_in_col - 1 > row:
-                                board[row][col] = EMPTY_CELL
-                    else:
-                        next_cell_row = max([i for i in range(row + 1, BOARD_SIZE)])
-                        board[next_cell_row][col] = board[row][col]
-                        board[row][col] = EMPTY_CELL
+            board = move_logic(board)
 
-        is_board_full = not insert_new_number(board)
+        insert_new_number(board)
 
-    if is_winning_cell:
+    if HAS_WON:
         print("congrats! you won :)")
-    elif is_board_full:
+    elif HAS_LOST:
         print("game over :(")
 
 
